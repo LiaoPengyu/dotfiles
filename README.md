@@ -22,9 +22,9 @@ Use LightDM as Display manager for login, LXsession for Session manager which wi
 1. Enable Display Manager: `systemctl enable lightdm`
 2. Create a LXsession session for DM to launch:
 
-        # Copy & Modify the Xmonad session.
+	# Copy & Modify the Xmonad session.
 	sudo cp /usr/share/xsessions/xmonad.desktop /usr/share/xsessions/lxsession.desktop
-        # Or just create a new one with the content:
+	# Or just create a new one with the content:
 	[Desktop Entry]
 	Name=Xmonad-LXsession
 	Comment=Xsession for launching WM
