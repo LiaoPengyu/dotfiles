@@ -1,0 +1,4 @@
+[Desktop Entry]
+Type=Application
+Name=Polybar with sys tray
+Exec=/home/pengyul/.config/polybar/launch.sh --material
