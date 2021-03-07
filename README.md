@@ -22,15 +22,15 @@ Use LightDM as Display manager for login, LXsession for Session manager which wi
 1. Enable Display Manager: `systemctl enable lightdm`
 2. Create a LXsession session for DM to launch:
 
-	# Copy & Modify the Xmonad session.
-	sudo cp /usr/share/xsessions/xmonad.desktop /usr/share/xsessions/lxsession.desktop
-	# Or just create a new one with the content:
-	[Desktop Entry]
-	Name=Xmonad-LXsession
-	Comment=Xsession for launching WM
-	Exec=lxsession
-	Icon=xmonad
-	Type=Xsession
+        # Copy & Modify the Xmonad session.
+        sudo cp /usr/share/xsessions/xmonad.desktop /usr/share/xsessions/lxsession.desktop
+        # Or just create a new one with the content:
+        [Desktop Entry]
+        Name=Xmonad-LXsession
+        Comment=Xsession for launching WM
+        Exec=lxsession
+        Icon=xmonad
+        Type=Xsession
 
 The benefit of this setup is so that having LXsession as a session manager, which manages session separatly. Especially, LXsession support XDG autostart, so one could manage all the autostart tasks in unformed ~/.config/autostart instead of putting into Xinitrc, Xsession, Xprofile etc.
 
