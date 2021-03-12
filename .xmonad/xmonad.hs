@@ -1,5 +1,7 @@
 -- Base
+
 import           System.Exit                         (exitSuccess)
+import           System.IO                           (hPutStrLn)
 import           XMonad
 import           XMonad.Operations                   (restart)
 import qualified XMonad.StackSet                     as W
@@ -271,7 +273,7 @@ myKeys = [
         ]
 
 -- Write to FIFO for polybar to read
-eventLogHook = do
+myPolybarEventLogHook = do
   winset <- gets windowset
   title <- maybe (return "") (fmap show . getName) . W.peek $ winset
   let currWs = W.currentTag winset
@@ -300,9 +302,11 @@ addSupported props = withDisplay $ \dpy -> do
 
 main :: IO ()
 main = do
-    forM_ [".xmonad-workspace-log", ".xmonad-title-log"] $ \file -> do
-        safeSpawn "mkfifo" ["/tmp/" ++ file]
+    -- Create FIFO file for Polybar
+    -- forM_ [".xmonad-workspace-log", ".xmonad-title-log"] $ \file -> do
+    --     safeSpawn "mkfifo" ["/tmp/" ++ file]
 
+    xmproc <- spawnPipe "xmobar -x 0 $HOME/.config/xmobar/xmobarrc"
     xmonad $ ewmh $ def
         { manageHook         = myManageHook <+> manageDocks <+> manageHook desktopConfig
         , modMask            = myModMask
@@ -314,5 +318,17 @@ main = do
         , focusedBorderColor = myFocusedBorderColor
 	, startupHook        = startupHook desktopConfig <+> setFullscreenSupported
         , handleEventHook    = handleEventHook desktopConfig <+> fullscreenEventHook
-        , logHook            = workspaceHistoryHook <+> eventLogHook
+        , logHook            = workspaceHistoryHook <+>
+	                       -- myPolybarEventLogHook  <+>
+			       dynamicLogWithPP xmobarPP
+                        { ppOutput = hPutStrLn xmproc
+                        , ppCurrent = wrap "[" "]"           -- Current workspace in xmobar
+                        , ppVisible = wrap "(" ")"           -- Visible but not current workspace
+                        , ppHidden = wrap "*" ""             -- Hidden workspaces in xmobar
+                        , ppHiddenNoWindows = clickable      -- Hidden workspaces (no windows)
+                        , ppTitle = shorten 60               -- Title of active window in xmobar
+                        , ppUrgent = xmobarColor myUrgentTextColor "" . wrap " " " " -- Urgent workspace
+                        , ppOrder  = \(ws:l:t:ex) -> [ws,l]++ex++[t]
+                        }
+
         } `additionalKeysP` myKeys

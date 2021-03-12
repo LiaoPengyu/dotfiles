@@ -5,6 +5,7 @@
 msgId="991049"
 
 # Change the volume using alsa(might differ if you use pulseaudio)
+# If volume control keypress is handled by program (e.g. volumeicon), just play the beep here.
 amixer set Master "$@" > /dev/null
 
 # Query amixer for the current volume and whether or not the speaker is muted
