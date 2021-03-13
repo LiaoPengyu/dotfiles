@@ -46,6 +46,8 @@ Polybar, provides systray + status bar. Alternative Xmobar is more lightweight.
 	# copy default config and edit as needed.
 	cp /usr/share/doc/polybar/config $XDG_CONFIG_HOME/polybar/config
 
+*UPDATE: I found that Xmobar could do everything I want do with Polybar. So I switched to Xmobar but copied lots scripts for themes.*
+
 ## Night Light
 
 redshift, prob the de facto for "night light" if not running a DE.
