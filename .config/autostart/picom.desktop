@@ -1,4 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Picom Compositor
-Exec=picom -f

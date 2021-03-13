@@ -8,7 +8,7 @@ Config {
    , additionalFonts = [ "xft:Iosevka Nerd Font:size=14"
                        , "xft:Font Awesome 5 Free Solid:size=14" 
                        , "xft:Font Awesome 5 Brands:size=14"
-		       , "xft:Noto Sans:size=16"]
+        		       , "xft:Noto Sans:size=16"]
    , position = Static { xpos = 0, ypos = 0, width = 2160, height = 35 } 
    , bgColor = "#fdfffc"
    , fgColor = "#212121"
@@ -17,22 +17,36 @@ Config {
    , lowerOnStart =     True    -- send to bottom of window stack on start
    , hideOnStart =      False   -- start with window unmapped (hidden)
    , allDesktops =      True    -- show on all desktops
-   , overrideRedirect = False    -- set the Override Redirect flag (Xlib)
+   , overrideRedirect = False   -- set the Override Redirect flag (Xlib)
    , pickBroadest =     False   -- choose widest display (multi-monitor)
    , persistent =       True    -- enable/disable hiding (True = disabled)
    -- layout
    , sepChar = "%"
    , alignSep = "}{"
-   , template = "<action=`xdotool key Alt_L+space`>  </action>\
-                \%UnsafeStdinReader% }{\
+   , template = 
+        "<action=`$HOME/.bin/bar-launcher.sh`> </action> \
+        \%UnsafeStdinReader% }{\
 		-- \%uname%  \
 		\%KSJC%  \
-		\%cpu%  \
-		\%memory%  \
+        -- No space, so it disapear when no updates.
+        \<action=`$HOME/.bar/bar-updates.sh`>\
+        \%updates%\
+        \</action>\
+		\<action=`alacritty -t htop -e htop`>%cpu%</action>  \
+		\<action=`alacritty -t htop -e htop`>%memory%</action>  \
+		\<action=`bluetoothctl power on && bluetooth-autoconnect` button=1>\
+		\<action=`exec $HOME/.bin/toggle_bluetooth.sh` button=3>\
+        \%bluetooth%\
+        \</action></action>  \
+		\<action=`xdotool key XF86AudioRaiseVolume` button=5>\
+		\<action=`xdotool key XF86AudioLowerVolume` button=4>\
+		\<action=`xdotool key XF86AudioMute` button=1>\
+		\%alsa:default:Master%\
+		\</action></action></action>  \
 		\%battery%  \
-		\%wlan0wi%  \
+		\<action=`networkmanager_dmenu`>%wlan0wi%</action>  \
 		\%date%  \
-		\<action=`$HOME/.bin/powermenu.sh`>  </action>"
+		\<action=`$HOME/.bin/powermenu.sh`></action>  "
 
    -- plugins
    --   Numbers can be automatically colored according to their value. xmobar
@@ -49,30 +63,29 @@ Config {
    --   color can be set by enclosing in <fc></fc> tags. For more details
    --   see http://projects.haskell.org/xmobar/#system-monitor-plugins.
    , commands = 
-
         -- weather monitor
         [ Run Com "uname" ["-r"] "" 36000
         -- Workspaces, layout, etc.
         , Run UnsafeStdinReader
         , Run Weather "KSJC" [ "--template", "<skyCondition> <tempC>°C"
                              ] 18000
-	-- MTV LOAC1
-       -- , Run WeatherX "LOAC1"
-       --      [ ("clear", "")
-       --      , ("sunny", "盛")
-       --      , ("mostly clear", "")
-       --      , ("mostly sunny", "")
-       --      , ("partly sunny", "")
-       --      , ("fair", "杖")
-       --      , ("cloudy","")
-       --      , ("overcast","")
-       --      , ("partly cloudy", "⛅")
-       --      , ("mostly cloudy", "")
-       --      , ("considerable cloudiness", "") ]
-       --      ["-t", "<skyConditionS> <tempC>°C"
-       --      , "-L","10", "-H", "25", "--normal", "black"
-       --      , "--high", "lightgoldenrod4", "--low", "darkseagreen4"]
-       --      18000
+        -- MTV LOAC1
+        -- , Run WeatherX "LOAC1"
+        --      [ ("clear", "")
+        --      , ("sunny", "盛")
+        --      , ("mostly clear", "")
+        --      , ("mostly sunny", "")
+        --      , ("partly sunny", "")
+        --      , ("fair", "杖")
+        --      , ("cloudy","")
+        --      , ("overcast","")
+        --      , ("partly cloudy", "⛅")
+        --      , ("mostly cloudy", "")
+        --      , ("considerable cloudiness", "") ]
+        --      ["-t", "<skyConditionS> <tempC>°C"
+        --      , "-L","10", "-H", "25", "--normal", "black"
+        --      , "--high", "lightgoldenrod4", "--low", "darkseagreen4"]
+        --      18000
         -- network activity monitor (dynamic interface resolution)
         , Run DynNetwork     [ "--template" , "<dev>: <tx>kB/s|<rx>kB/s"
                              , "--Low"      , "1000"       -- units: B/s
@@ -84,38 +97,53 @@ Config {
 
         -- cpu activity monitor
         , Run Cpu            [ "--template" , "﬙ <total>%"
-                             , "--Low"      , "40"         -- units: %
-                             , "--High"     , "80"         -- units: %
+                             -- Considering most of the app just use single core.
+                             , "--Low"      , "10"         -- units: %
+                             , "--High"     , "40"         -- units: %
                              , "--normal"   , "orange"
                              , "--high"     , "red"
                              ] 20
 
         , Run Memory         [ "--template" ," <used> MB"
                              , "--Low"      , "4000"
-			     , "--High"     , "10000"
+	            		     , "--High"     , "10000"
                              , "--normal"   , "orange"
                              , "--high"     , "red"
                              ] 20
 
         -- battery monitor
-	, Run BatteryP ["BAT0"]
-                  [ "-t", "<acstatus><left>%"
-                  , "-L", "30", "-H", "80", "-p", "3" 
-                  , "--low", "orange"
-                  , "--" 
-		  , "-O", " " -- AC ON
-		  , "-i", " " -- AC Idle
-		  , "-o", ""  -- AC Off
-		  , "--lows", ""
-                  , "--mediums", ""
-                  , "--highs", ""
-		 , "-a", "notify-send -u critical 'Low Battery!'"
-                  , "-A", "15"] 600
-	-- wireless ssid
-	, Run Wireless "wlan0" [ "-t", "直 <essid>" ] 10
-
+	    , Run Battery [ "-t", "<acstatus> <left>%"
+                      , "-L", "25", "-H", "75", "-p", "2" 
+                      , "--" 
+                      , "-L", "25", "-H", "75", "-p", "0x4e937a" 
+                      , "-l", "orange"
+	        	      , "-O", "" -- AC ON
+	        	      , "-i", "" -- AC Idle
+	        	      , "-o", ""  -- AC Off
+	        	      , "--lows", ""
+                      , "--mediums", ""
+                      , "--highs", ""
+	        	      , "-a", "notify-send -u critical 'Low Battery!'"
+                      , "-A", "15"] 60
+	    -- wireless ssid
+    	, Run Wireless "wlan0" [ "-t", "直 <essid>" ] 10
         -- time and date indicator 
-        --   (%F = y-m-d date, %a = day of week, %T = h:m:s time)
-        , Run Date           " %I:%M %p" "date" 10
+        -- (%F = y-m-d date, %a = day of week, %T = h:m:s time)
+        , Run Date " %I:%M %p" "date" 10
+        -- volume indicator
+        , Run Alsa "default" "Master"
+                 [ "-L", "20", "-H", "60"
+                 , "-t", "<status> <volume>%"
+                 , "--"
+                 , "--alsactl", "/usr/bin/alsactl"
+                 , "--onc", "#212121"
+              	 , "--offc", "#212121"
+              	 , "--on", ""
+               	 , "--off", "婢"
+                 , "-h", "墳"
+             	 , "-m", "奔"
+                 , "-l", "奄"]
+        , Run Com "sh" [ "-c", "$HOME/.bin/bluetooth-xmobar.sh" ] "bluetooth" 10
+        , Run CommandReader "$HOME/.bin/bar-updates.sh" "updates"
         ]
    }
