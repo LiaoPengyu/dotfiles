@@ -138,9 +138,11 @@ myFileManagerClassName = "Nemo"
 myNormalBorderColor   = "#d1d3d2" -- Border color of normal windows
 myFocusedBorderColor  = "#4e937a"  -- Border color of focused windows
 myUrgentBorderColor = "#c97b84"
-myActiveTextColor = "#268bd2"
-myInactiveTextColor = "#073642"
+myActiveTextColor = "#fdfdfd"
+myInactiveTextColor = "#0a0a0a"
 myUrgentTextColor = "#cb4b16"
+myXmobarActiveColor = "#d88666"
+myXmobarWithWindowColor = "#d88666"
 
 myScratchpads :: [NamedScratchpad]
 myScratchpads = [ NS "terminal" myTerminalScratchpad findTerm manageFloat
@@ -177,43 +179,40 @@ tall     = renamed [Replace "tall"]
 
 tabs     = renamed [Replace "tabs"]
            $ myGaps
-	   $ tabbed shrinkText myTabTheme
+           $ tabbed shrinkText myTabTheme
 
 
 
 -- Theme for showWName which prints current workspace when you change workspaces.
 myShowWNameTheme :: SWNConfig
 myShowWNameTheme = def
-    { swn_font              = "xft:Ubuntu:bold:size=60"
+    { swn_font              = "xft:Iosevka Nerd Font:size=55"
     , swn_fade              = 1.0
     , swn_bgcolor           = "#1c1f24"
     , swn_color             = "#ffffff"
     }
 
 -- The layout hook
-myLayoutHook = smartBorders $ mouseResize $ windowArrange
+myLayoutHook = avoidStruts $ smartBorders $ mouseResize $ windowArrange
                $ mkToggle (NBFULL ?? NOBORDERS ?? EOT)$ myDefaultLayout
              where
                myDefaultLayout = tall
                                  ||| tabs
 
--- This has to match the configuration in polybar workspace module
+myWorkspacesIcon = ["\62601", "\63288", "\64271", "\61563", "\63159"]
+-- myWorkspaces = ["", "", "﬏", "", ""]
 myWorkspaces = ["term", "www", "code", "file", "vbox"]
---myWorkspaces = ["1", "2", "3", "4", "5"]
-myWorkspaceIndices = M.fromList $ zipWith (,) myWorkspaces [1..] -- (,) == \x y -> (x,y)
-
--- dmenu clickable action
-clickable ws = "<action=xdotool key super+"++show i++">"++ws++"</action>"
-    where i = fromJust $ M.lookup ws myWorkspaceIndices
+myWorkspaceIndices = M.fromList $ zipWith (,) myWorkspaces [1..]
 
 myManageHook :: XMonad.Query (Data.Monoid.Endo WindowSet)
 myManageHook = composeAll
      [ title =? "Mozilla Firefox" --> doShift ( myWorkspaces !! 1 )
      , isDialog --> doCenterFloat
-     , (className =? myFileManagerClassName) --> doCenterFloat
-     , (className =? myNetworkManagerClassName) --> doCenterFloat
-     , (className =? myBluetoothClassName) --> doCenterFloat
-     , (className =? "Gucharmap") --> doCenterFloat
+     , className =? myFileManagerClassName --> doCenterFloat
+     , className =? myNetworkManagerClassName --> doCenterFloat
+     , className =? myBluetoothClassName --> doCenterFloat
+     , className =? "Gucharmap" --> doCenterFloat
+     , title =? "htop" --> doCenterFloat
      , (className =? myBrowserClassName <&&> resource =? "Dialog") --> doFloat  -- Float Firefox Dialog
      , title =? "Oracle VM VirtualBox Manager" --> doCenterFloat
      , className =? "VirtualBox Manager" --> doShift ( myWorkspaces !! 3 )
@@ -287,6 +286,8 @@ myPolybarEventLogHook = do
           | currWs == ws = "[" ++ ws ++ "]"
           | otherwise    = " " ++ ws ++ " "
 
+myStartupHook = setWMName "LG3D"
+
 -- full screen support.
 setFullscreenSupported :: X ()
 setFullscreenSupported = addSupported ["_NET_WM_STATE", "_NET_WM_STATE_FULLSCREEN"]
@@ -300,35 +301,62 @@ addSupported props = withDisplay $ \dpy -> do
       supportedList <- fmap (join . maybeToList) $ getWindowProperty32 dpy a r
       changeProperty32 dpy r a aTOM propModeReplace (nub $ newSupportedList ++ supportedList)
 
+-- Get the (index, icon) of the WS
+convertToIcon ws = (icon, index)
+    where
+      index = fromJust $ M.lookup ws myWorkspaceIndices
+      icon = myWorkspacesIcon !! (index-1)
+
+-- Xmobar clickable action
+clickableWs "" = ""
+clickableWs ws = "<action=xdotool key super+"++show i++">"++icon++"</action>"
+    where
+      (icon, i) = convertToIcon ws
+-- Click for next layout
+clickableLayout l = "<action=xdotool key super+space>"++l++"</action>"
+
+
+myCurrentLogFormatter w = xmobarColor myXmobarActiveColor "" $ wrap "[" "]" icon
+    where (icon, _) = convertToIcon w 
+myVisibleLogFormatter "NSP" = ""
+myVisibleLogFormatter w = wrap " " " " $ clickableWs w
+myHiddenNWLogFormatter "NSP" = ""
+myHiddenNWLogFormatter w = wrap " " " " $ clickableWs w
+myHiddenLogFormatter "NSP" = ""
+myHiddenLogFormatter w = xmobarColor myXmobarWithWindowColor "" $ wrap " " " " $ clickableWs w
+myLayoutLogFormatter = clickableLayout
+
 main :: IO ()
 main = do
     -- Create FIFO file for Polybar
     -- forM_ [".xmonad-workspace-log", ".xmonad-title-log"] $ \file -> do
     --     safeSpawn "mkfifo" ["/tmp/" ++ file]
 
-    xmproc <- spawnPipe "xmobar -x 0 $HOME/.config/xmobar/xmobarrc"
+    xmproc <- spawnPipe "xmobar $HOME/.config/xmobar/xmobarrc"
     xmonad $ ewmh $ def
-        { manageHook         = myManageHook <+> manageDocks <+> manageHook desktopConfig
+        { manageHook         = myManageHook <+> manageDocks
         , modMask            = myModMask
         , terminal           = myTerminal
-        , layoutHook         = desktopLayoutModifiers $ showWName' myShowWNameTheme $ myLayoutHook
+        , layoutHook         = showWName' myShowWNameTheme $ myLayoutHook
         , workspaces         = myWorkspaces
         , borderWidth        = myBorderWidth
         , normalBorderColor  = myNormalBorderColor
         , focusedBorderColor = myFocusedBorderColor
-	, startupHook        = startupHook desktopConfig <+> setFullscreenSupported
+	    , startupHook        = myStartupHook <+> setFullscreenSupported
         , handleEventHook    = handleEventHook desktopConfig <+> fullscreenEventHook
-        , logHook            = workspaceHistoryHook <+>
-	                       -- myPolybarEventLogHook  <+>
+        , logHook            = 
+                             --workspaceHistoryHook <+>
+	                         --myPolybarEventLogHook <+>
+                   -- (myDebugHook xmproc) <+>
 			       dynamicLogWithPP xmobarPP
                         { ppOutput = hPutStrLn xmproc
-                        , ppCurrent = wrap "[" "]"           -- Current workspace in xmobar
-                        , ppVisible = wrap "(" ")"           -- Visible but not current workspace
-                        , ppHidden = wrap "*" ""             -- Hidden workspaces in xmobar
-                        , ppHiddenNoWindows = clickable      -- Hidden workspaces (no windows)
-                        , ppTitle = shorten 60               -- Title of active window in xmobar
+                        , ppCurrent = myCurrentLogFormatter          -- Current workspace in xmobar
+                        , ppVisible = myVisibleLogFormatter          -- Visible but not current workspace
+                        , ppHidden = myHiddenLogFormatter            -- Hidden workspaces in xmobar
+                        , ppHiddenNoWindows = myHiddenNWLogFormatter -- Hidden workspaces (no windows)
+                        , ppLayout = myLayoutLogFormatter            -- Layout
+                        , ppSep =  " | "
+                        , ppTitle = shorten 60                       -- Title of active window in xmobar
                         , ppUrgent = xmobarColor myUrgentTextColor "" . wrap " " " " -- Urgent workspace
-                        , ppOrder  = \(ws:l:t:ex) -> [ws,l]++ex++[t]
                         }
-
         } `additionalKeysP` myKeys
