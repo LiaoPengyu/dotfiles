@@ -39,16 +39,28 @@
 
 # Examples of commands:
 
+# Lock screen
+"betterlockscreen -l dim"
+  Control+Alt+l  
+
+# Open console
+"alacritty"
+  XF86Display
+
+# Screenshoot
+"scrot"
+  Print
+
 # Increase volume
-"/home/pengyul/.bin/changeVolume 5%+ unmute"
+"$HOME/.bin/change-volume 5%+ unmute"
   XF86AudioRaiseVolume
 
 # Decrease volume
-"/home/pengyul/.bin/changeVolume 5%- unmute"
+"$HOME/.bin/change-volume 5%- unmute"
   XF86AudioLowerVolume
 
 # Mute volume
-"/home/pengyul/.bin/changeVolume toggle"
+"$HOME/.bin/change-volume toggle"
   XF86AudioMute
 
 # Mute microphone
