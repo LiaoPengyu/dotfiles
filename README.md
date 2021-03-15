@@ -13,8 +13,10 @@
 - Night light: redshift geoclue2
 - Notification: notification-daemon dunst gnome-icon-theme adwaita-icon-theme
 
-[[file:screenshots/screenshot1.png]]
-[[file:screenshots/screenshot2.png]]
+
+
+![Screenshot1](https://raw.github.com/LiaoPengyu/dotfiles/master/screenshots/screenshot1.png)
+![Screenshot1](https://raw.github.com/LiaoPengyu/dotfiles/master/screenshots/screenshot2.png)
 
 # Setups
 
