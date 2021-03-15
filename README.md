@@ -1,12 +1,13 @@
 # Packages to install
 
 - X, DM, WM, Compositor: xorg lightdm lightdm-gtk-greeter xmonad xmonad-contrib picom
-- Util: nemo neovim firefox alacritty zsh nitrogen htop xbindkeys bc neofetch xdotool
+- Util: nemo neovim firefox alacritty zsh nitrogen htop xbindkeys bc neofetch xdotool scrot
 - Network: networkmanager network-manager-applet
 - Font: ttf-freefont ttf-arphic-uming ttf-baekmuk ttf-liberation ttf-droid ttf-bitstream-vera ttf-croscore ttf-dejavu gnu-free-fonts noto-fonts noto-fonts-emoji ttf-linux-libertine ttf-joypixels ttf-font-awesome otf-font-awesome terminus-font
+- Fonts Explorer: gucharmap
 - Audio: alsa-utils alsa-plugins sof-firmware alsa-ucm-conf pulseaudio pulseaudio-alsa pulseaudio-bluetooth pulseaudio-jack volumeicon
 - Bluetooth: bluez bluez-utils blueman
-- Vedio: mesa xf86-video-intel xf86-input-libinput
+- Video: mesa xf86-video-intel xf86-input-libinput
 - Power Management: tlp tlp-rdw powertop
 - Hard Drive Health: smartmontools
 - Night light: redshift geoclue2
@@ -110,3 +111,11 @@ Create/Edit `/etc/X11/xorg.conf.d/30-touchpad.conf`
 
 For X11 to swap caps and control: 
 `localectl set-x11-keymap us,us pc86 ,dvorak ctrl:swapcaps`
+
+## Misc
+
+Create soft links:
+
+`sudo ln -s `which xdg-open` /usr/bin/open`
+
+`sudo ln -s `which nvim` /usr/bin/vim`

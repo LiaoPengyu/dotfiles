@@ -1,12 +1,12 @@
 #!/bin/sh
-if [ $(bluetoothctl show | grep "Powered: yes" | wc -c) -eq 0 ]
-then
-  echo "<fc=#616161></fc>"
-else
-  if [ $(echo info | bluetoothctl | grep 'Device' | wc -c) -eq 0 ]
-  then 
+controller="$(bluetoothctl show)"
+if ! [[ "$controller" =~ .*"Powered: yes".* ]]; then
+    echo "<fc=#616161></fc>"
+elif [[ "$controller" =~ .*"Discovering: yes".* ]]; then
+    echo ""
+elif [[ $(echo info | bluetoothctl | grep 'Device' | wc -c) -eq 0 ]]; then
     echo ""
-  fi
-  echo "<fc=#2193ff></fc>"
+else
+    echo "<fc=#2193ff></fc>"
 fi
 

@@ -27,10 +27,16 @@ Config {
         "<action=`$HOME/.bin/bar-launcher.sh`> </action> \
         \%UnsafeStdinReader% }{\
 		-- \%uname%  \
-		\%KSJC%  \
+        \%firmware%\
+		\<action=`xdg-open https://www.google.com/search?q=weather`>\
+        \%KSJC%\
+        \</action>  \
         -- No space, so it disapear when no updates.
         \<action=`$HOME/.bar/bar-updates.sh`>\
         \%updates%\
+        \</action>\
+		\<action=`xdotool key ctrl+space`>\
+        \ %kbd%  \
         \</action>\
 		\<action=`alacritty -t htop -e htop`>%cpu%</action>  \
 		\<action=`alacritty -t htop -e htop`>%memory%</action>  \
@@ -113,7 +119,7 @@ Config {
 
         -- battery monitor
 	    , Run Battery [ "-t", "<acstatus> <left>%"
-                      , "-L", "25", "-H", "75", "-p", "2" 
+                      , "-L", "25", "-H", "75", "-p", "3" 
                       , "--" 
                       , "-L", "25", "-H", "75", "-p", "0x4e937a" 
                       , "-l", "orange"
@@ -145,5 +151,7 @@ Config {
                  , "-l", "奄"]
         , Run Com "sh" [ "-c", "$HOME/.bin/bluetooth-xmobar.sh" ] "bluetooth" 10
         , Run CommandReader "$HOME/.bin/bar-updates.sh" "updates"
+        , Run Kbd [("us", "US"), ("cn", "CN")]
+        , Run Com "sh" [ "-c", "$HOME/.bin/firmware-update.sh" ] "firmware" 0
         ]
    }

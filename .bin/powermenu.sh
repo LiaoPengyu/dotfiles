@@ -76,8 +76,8 @@ case $chosen in
 	$logout)
 		ans=$(confirm_exit &)
 		if [[ $ans == "yes" || $ans == "YES" || $ans == "y" || $ans == "Y" ]]; then
-			if [[ "$DESKTOP_SESSION" == "LXDE" ]]; then
-				$HOME/.bin/lxsession-logout-directly.sh
+			if [[ "$DESKTOP_SESSION" == "xmonad" ]]; then
+			    pkill xmonad	
 			fi
 		elif [[ $ans == "no" || $ans == "NO" || $ans == "n" || $ans == "N" ]]; then
 			exit 0

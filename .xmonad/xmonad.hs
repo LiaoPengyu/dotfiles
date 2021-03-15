@@ -1,16 +1,13 @@
 -- Base
-
 import           System.Exit                         (exitSuccess)
 import           System.IO                           (hPutStrLn)
 import           XMonad
+import           XMonad.Core
 import           XMonad.Operations                   (restart)
 import qualified XMonad.StackSet                     as W
 
 -- Actions
 import           XMonad.Actions.CopyWindow           (kill1)
-import           XMonad.Actions.CycleWS              (WSType (..), moveTo,
-                                                      nextScreen, prevScreen,
-                                                      shiftTo)
 import           XMonad.Actions.MouseResize
 import           XMonad.Actions.Promote
 import           XMonad.Actions.RotSlaves            (rotAllDown, rotSlavesDown)
@@ -31,7 +28,8 @@ import           XMonad.Hooks.DynamicLog             (PP (..), dynamicLogWithPP,
                                                       shorten, wrap,
                                                       xmobarColor, xmobarPP)
 import           XMonad.Hooks.EwmhDesktops
-import           XMonad.Hooks.ManageDocks            (ToggleStruts (..),
+import           XMonad.Hooks.ManageDocks            (SetStruts (..),
+                                                      ToggleStruts (..),
                                                       avoidStruts, docks,
                                                       docksEventHook,
                                                       manageDocks)
@@ -51,6 +49,7 @@ import           XMonad.Layout.NoFrillsDecoration
 import           XMonad.Layout.ResizableTile
 import           XMonad.Layout.SimplestFloat
 import           XMonad.Layout.Tabbed
+import           XMonad.Layout.TwoPanePersistent
 import           XMonad.Layout.ThreeColumns
 
 -- Layouts modifiers
@@ -62,7 +61,7 @@ import           XMonad.Layout.Magnifier
 import           XMonad.Layout.MultiToggle           (EOT (EOT), mkToggle,
                                                       single, (??))
 import qualified XMonad.Layout.MultiToggle           as MT (Toggle (..))
-import           XMonad.Layout.MultiToggle.Instances (StdTransformers (MIRROR, NBFULL, NOBORDERS))
+import           XMonad.Layout.MultiToggle.Instances (StdTransformers (FULL, MIRROR, NBFULL, NOBORDERS, SMARTBORDERS))
 import           XMonad.Layout.NoBorders
 import           XMonad.Layout.Renamed
 import           XMonad.Layout.ShowWName
@@ -145,16 +144,15 @@ myXmobarActiveColor = "#d88666"
 myXmobarWithWindowColor = "#d88666"
 
 myScratchpads :: [NamedScratchpad]
-myScratchpads = [ NS "terminal" myTerminalScratchpad findTerm manageFloat
-                ]
+myScratchpads = [ NS "terminal" myTerminalScratchpad findTerm manageFloat ]
   where
     findTerm   = resource =? "scratchpad"
     manageFloat = customFloating $ W.RationalRect t l w h
                where
-                 w = (1/2)
-                 h = (1/2)
-                 l = (1-w) / 2
-                 t = 1/5
+                 w = (1)
+                 h = (4/9)
+                 t = 0
+                 l = 1 - h
 
 outerGaps    = 10
 myGaps       = gaps [(U, gap), (R, gap), (L, gap), (D, gap)]
@@ -173,11 +171,14 @@ myTabTheme = def
     , inactiveTextColor     = myInactiveTextColor
     }
 
-tall     = renamed [Replace "tall"]
+tall     = renamed [Replace "Tall"]
            $ mySpacing
            $ ResizableTall 1 (3/100) (5/9) []
 
-tabs     = renamed [Replace "tabs"]
+twoPane =  renamed [Replace "TwoPane"] $
+           TwoPanePersistent Nothing (3/100) (5/9)
+
+tabs     = renamed [Replace "Tabs"]
            $ myGaps
            $ tabbed shrinkText myTabTheme
 
@@ -193,10 +194,16 @@ myShowWNameTheme = def
     }
 
 -- The layout hook
-myLayoutHook = avoidStruts $ smartBorders $ mouseResize $ windowArrange
-               $ mkToggle (NBFULL ?? NOBORDERS ?? EOT)$ myDefaultLayout
+myLayoutHook = avoidStruts 
+               $ smartBorders
+               $ mouseResize 
+               $ windowArrange
+               $ mkToggle (single NBFULL)
+               $ mkToggle (single FULL)
+               $ myDefaultLayout
              where
                myDefaultLayout = tall
+                                 ||| twoPane
                                  ||| tabs
 
 myWorkspacesIcon = ["\62601", "\63288", "\64271", "\61563", "\63159"]
@@ -218,6 +225,27 @@ myManageHook = composeAll
      , className =? "VirtualBox Manager" --> doShift ( myWorkspaces !! 3 )
      , isFullscreen --> doFullFloat
      ] <+> namedScratchpadManageHook myScratchpads
+
+-- Get current layout of focused WS
+getActiveLayoutDescription :: X String
+getActiveLayoutDescription = do
+    workspaces <- gets windowset
+    return $ description . W.layout . W.workspace . W.current $ workspaces
+
+-- Force secondary for TwoPane. Unless the secondary get focused, the window wouldn't swap. 
+forceSecondaryRefresh = do
+    workspaces <- gets windowset
+    let isMaster = null . W.up . fromJust $ W.stack . W.workspace . W.current $ workspaces in
+      case isMaster of
+          True -> windows swapTwoPane <+> windows swapTwoPane
+          False -> return () 
+        
+
+-- Swap between current and master for TwoPane
+swapTwoPane :: W.StackSet i l a s sd -> W.StackSet i l a s sd
+swapTwoPane = W.modify' $ \c -> case c of
+    W.Stack t [] rs -> W.Stack x xs [] where (x:xs) = reverse (t:rs)
+    W.Stack t ls rs -> W.Stack x [] (rs ++ xs) where (x:xs) = reverse (t:ls)
 
 myKeys = [
     -- launch scratchpad terminal. M-<Return> defaults to "Swap the focused window and the master window".
@@ -255,15 +283,24 @@ myKeys = [
    -- Windows navigation
         , ("M-m", windows W.focusMaster)  -- Move focus to the master window
         , ("M-S-m", promote)              -- Swap master
-        , ("M-j", windows W.focusDown)    -- Move focus to the next window
+        , ("M-j", do 
+        layout <- getActiveLayoutDescription
+        case layout of
+            "TwoPane" -> windows swapTwoPane 
+            _ -> windows W.focusDown)     -- Move focus to the next window
         , ("M-k", windows W.focusUp)      -- Move focus to the prev window
         , ("M-S-j", windows W.swapDown)   -- Swap focused window with next window
         , ("M-S-k", windows W.swapUp)     -- Swap focused window with prev window
-        , ("M-C-<Tab>", rotAllDown)       -- Rotate all the windows in the current stack
+        , ("M-<Tab>", do 
+        layout <- getActiveLayoutDescription
+        case layout of
+            "TwoPane" -> rotSlavesDown <+> forceSecondaryRefresh 
+            _ -> windows W.focusDown)      -- Rotate all the seconardary windows
+        , ("M-S-<Tab>", rotAllDown)       -- Rotate all the windows in the current stack
 
     -- Layouts
         , ("M-f", sendMessage (MT.Toggle NBFULL) >> sendMessage ToggleStruts) -- Toggles noborder/full
-        , ("M-S-f", sendMessage ToggleStruts)     -- Toggles struts
+        , ("M-S-f", sendMessage (MT.Toggle FULL)) -- Toggles full with status bar
         , ("M-<Space>", sendMessage NextLayout)           -- Switch to next layout
         , ("M-S-n", sendMessage $ MT.Toggle NOBORDERS)  -- Toggles noborder
 
@@ -317,11 +354,11 @@ clickableLayout l = "<action=xdotool key super+space>"++l++"</action>"
 
 
 myCurrentLogFormatter w = xmobarColor myXmobarActiveColor "" $ wrap "[" "]" icon
-    where (icon, _) = convertToIcon w 
+    where (icon, _) = convertToIcon w
 myVisibleLogFormatter "NSP" = ""
-myVisibleLogFormatter w = wrap " " " " $ clickableWs w
+myVisibleLogFormatter w     = wrap " " " " $ clickableWs w
 myHiddenNWLogFormatter "NSP" = ""
-myHiddenNWLogFormatter w = wrap " " " " $ clickableWs w
+myHiddenNWLogFormatter w     = wrap " " " " $ clickableWs w
 myHiddenLogFormatter "NSP" = ""
 myHiddenLogFormatter w = xmobarColor myXmobarWithWindowColor "" $ wrap " " " " $ clickableWs w
 myLayoutLogFormatter = clickableLayout
@@ -344,7 +381,7 @@ main = do
         , focusedBorderColor = myFocusedBorderColor
 	    , startupHook        = myStartupHook <+> setFullscreenSupported
         , handleEventHook    = handleEventHook desktopConfig <+> fullscreenEventHook
-        , logHook            = 
+        , logHook            =
                              --workspaceHistoryHook <+>
 	                         --myPolybarEventLogHook <+>
                    -- (myDebugHook xmproc) <+>
@@ -357,6 +394,6 @@ main = do
                         , ppLayout = myLayoutLogFormatter            -- Layout
                         , ppSep =  " | "
                         , ppTitle = shorten 60                       -- Title of active window in xmobar
-                        , ppUrgent = xmobarColor myUrgentTextColor "" . wrap " " " " -- Urgent workspace
+                        , ppUrgent = xmobarColor myUrgentTextColor "" . wrap "<" ">" -- Urgent workspace
                         }
         } `additionalKeysP` myKeys
