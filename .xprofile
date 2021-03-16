@@ -1,3 +1,13 @@
+# Cache wallpaper for locker
+betterlockscreen -u $HOME/Pictures/wallpapers &
+# Wallpaper
 nitrogen --restore
+# Compositor
 picom -f &
+# Key bindings
 xbindkeys &
+# Input method
+ibus-daemon -drx &
+# Screensaver
+xset s 120 120
+xss-lock -n $HOME/.bin/dim-screen.sh -l -- betterlockscreen -l &
