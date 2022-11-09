@@ -32,7 +32,7 @@ Config {
         \%KSJC%\
         \</action>  \
         -- No space, so it disapear when no updates.
-        \<action=`$HOME/.bar/bar-updates.sh`>\
+        \<action=`$HOME/.bin/bar-updates.sh`>\
         \%updates%\
         \</action>\
 		\<action=`xdotool key ctrl+space`>\
