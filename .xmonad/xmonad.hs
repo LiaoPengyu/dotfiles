@@ -1,4 +1,6 @@
+{-# LANGUAGE BangPatterns #-}
 -- Base
+import           Control.DeepSeq                     (deepseq)
 import           System.Exit                         (exitSuccess)
 import           System.IO                           (hPutStrLn)
 import           XMonad
@@ -7,10 +9,11 @@ import           XMonad.Operations                   (restart)
 import qualified XMonad.StackSet                     as W
 
 -- Actions
+import           XMonad.Actions.CycleWindows (rotUp, rotUnfocusedDown,rotUnfocusedUp, rotUnfocused')
 import           XMonad.Actions.CopyWindow           (kill1)
 import           XMonad.Actions.MouseResize
 import           XMonad.Actions.Promote
-import           XMonad.Actions.RotSlaves            (rotAllDown, rotSlavesDown)
+import           XMonad.Actions.RotSlaves            (rotAllDown, rotSlavesDown, rotSlaves')
 import qualified XMonad.Actions.Search               as S
 import           XMonad.Actions.WindowGo             (runOrRaise)
 import           XMonad.Actions.WithAll              (killAll, sinkAll)
@@ -132,6 +135,7 @@ myBrowserClassName = "firefox"
 myNetworkManagerClassName = "Nm-connection-editor"
 myBluetoothClassName = "Blueman-manager"
 myFileManagerClassName = "Nemo"
+myIdeClassName = "Emacs"
 
 -- colors
 myNormalBorderColor   = "#d1d3d2" -- Border color of normal windows
@@ -206,8 +210,8 @@ myLayoutHook = avoidStruts
                                  ||| twoPane
                                  ||| tabs
 
-myWorkspacesIcon = ["\62601", "\63288", "\64271", "\61563", "\63159"]
--- myWorkspaces = ["", "", "﬏", "", ""]
+myWorkspacesIcon = ["\62601 ", "\63288 ", "\64271 ", "\61563 ", "\63159 "]
+--myWorkspacesIcon = ["", "", "﬏", "", ""]
 myWorkspaces = ["term", "www", "code", "file", "vbox"]
 myWorkspaceIndices = M.fromList $ zipWith (,) myWorkspaces [1..]
 
@@ -215,11 +219,13 @@ myManageHook :: XMonad.Query (Data.Monoid.Endo WindowSet)
 myManageHook = composeAll
      [ title =? "Mozilla Firefox" --> doShift ( myWorkspaces !! 1 )
      , isDialog --> doCenterFloat
+     , className =? myIdeClassName --> doShift ( myWorkspaces !! 2 )
      , className =? myFileManagerClassName --> doCenterFloat
      , className =? myNetworkManagerClassName --> doCenterFloat
      , className =? myBluetoothClassName --> doCenterFloat
      , className =? "Gucharmap" --> doCenterFloat
      , title =? "htop" --> doCenterFloat
+     , title =? "ncmpcpp" --> doCenterFloat
      , (className =? myBrowserClassName <&&> resource =? "Dialog") --> doFloat  -- Float Firefox Dialog
      , title =? "Oracle VM VirtualBox Manager" --> doCenterFloat
      , className =? "VirtualBox Manager" --> doShift ( myWorkspaces !! 3 )
@@ -246,6 +252,19 @@ swapTwoPane :: W.StackSet i l a s sd -> W.StackSet i l a s sd
 swapTwoPane = W.modify' $ \c -> case c of
     W.Stack t [] rs -> W.Stack x xs [] where (x:xs) = reverse (t:rs)
     W.Stack t ls rs -> W.Stack x [] (rs ++ xs) where (x:xs) = reverse (t:ls)
+    
+
+
+-- Still lazy .... How to make unfocused secondary work?
+rotUnfocused :: X ()
+rotUnfocused = windows . W.modify' $ rotUnfocusedHelper rotUp
+
+-- The unfocused rotation on a stack.
+rotUnfocusedHelper :: ([a] -> [a]) -> W.Stack a -> W.Stack a
+rotUnfocusedHelper _ s@(W.Stack _ [] []) = s
+rotUnfocusedHelper f s@(W.Stack _ [] !rs) = s'
+    where s'@(W.Stack _ _ !rs') = rotSlaves' f s                 -- Master has focus
+rotUnfocusedHelper f s@(W.Stack t ls rs) = rotUnfocused' f s
 
 myKeys = [
     -- launch scratchpad terminal. M-<Return> defaults to "Swap the focused window and the master window".
@@ -263,7 +282,7 @@ myKeys = [
         , ("M-q", restart "xmonad" True) -- Recompiles & restart xmonad
 
     -- Run Prompt
-        , ("M1-<Space>", spawn "rofi -no-config -no-lazy-grab -show drun -modi drun -theme ~/.config/polybar/material/scripts/rofi/launcher.rasi") -- Rofi
+        , ("M1-<Space>", spawn "rofi -no-config -no-lazy-grab -show drun -modi drun -theme ~/.config/rofi/quick-launcher.rasi") -- Rofi
 
     -- Floating windows
         , ("M-t", withFocused $ windows . W.sink)
@@ -281,6 +300,7 @@ myKeys = [
         , ("M-l", sendMessage Expand)
 
    -- Windows navigation
+        , ("M-r", rotUnfocused)
         , ("M-m", windows W.focusMaster)  -- Move focus to the master window
         , ("M-S-m", promote)              -- Swap master
         , ("M-j", do 
@@ -370,7 +390,7 @@ main = do
     --     safeSpawn "mkfifo" ["/tmp/" ++ file]
 
     xmproc <- spawnPipe "xmobar $HOME/.config/xmobar/xmobarrc"
-    xmonad $ ewmh $ def
+    xmonad $ ewmhFullscreen . ewmh $ def
         { manageHook         = myManageHook <+> manageDocks
         , modMask            = myModMask
         , terminal           = myTerminal
@@ -379,8 +399,8 @@ main = do
         , borderWidth        = myBorderWidth
         , normalBorderColor  = myNormalBorderColor
         , focusedBorderColor = myFocusedBorderColor
-	    , startupHook        = myStartupHook <+> setFullscreenSupported
-        , handleEventHook    = handleEventHook desktopConfig <+> fullscreenEventHook
+        , startupHook        = myStartupHook <+> setFullscreenSupported
+        , handleEventHook    = handleEventHook desktopConfig 
         , logHook            =
                              --workspaceHistoryHook <+>
 	                         --myPolybarEventLogHook <+>

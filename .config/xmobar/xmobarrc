@@ -3,13 +3,14 @@
 -- you can find weather location codes here: http://weather.noaa.gov/index.html
 Config {
    -- appearance
-   font = "xft:Iosevka Nerd Font:size=14"
+   font = "xft:Iosevka Nerd Font:size=14,Source Han Sans CN:size=14"
    --font = "xft:Bitstream Vera Sans Mono:pixelsize=15:antialias=true:hinting=true"
-   , additionalFonts = [ "xft:Iosevka Nerd Font:size=14"
+   , additionalFonts = [ "xft:Iosevka Nerd Font:size=14,Source Han Sans CN:size=14"
                        , "xft:Font Awesome 5 Free Solid:size=14" 
                        , "xft:Font Awesome 5 Brands:size=14"
         		       , "xft:Noto Sans:size=16"]
-   , position = Static { xpos = 0, ypos = 0, width = 2160, height = 35 } 
+   --, position = Static { xpos = 0, ypos = 0, width = 2160, height = 35 } 
+   , position = TopSize C 100 35 
    , bgColor = "#fdfffc"
    , fgColor = "#212121"
    , iconRoot = "$HOME/.xmonad/xpm/"  -- default: "."
@@ -24,8 +25,9 @@ Config {
    , sepChar = "%"
    , alignSep = "}{"
    , template = 
-        "<action=`$HOME/.bin/bar-launcher.sh`> </action> \
+        " <action=`$HOME/.bin/bar-launcher.sh`> </action> \
         \%UnsafeStdinReader% }{\
+        \ %mpd% | \
 		-- \%uname%  \
         \%firmware%\
 		\<action=`xdg-open https://www.google.com/search?q=weather`>\
@@ -36,8 +38,8 @@ Config {
         \%updates%\
         \</action>\
 		\<action=`xdotool key ctrl+space`>\
-        \ %kbd%  \
-        \</action>\
+        \  %kbd%\
+        \</action>  \
 		\<action=`alacritty -t htop -e htop`>%cpu%</action>  \
 		\<action=`alacritty -t htop -e htop`>%memory%</action>  \
 		\<action=`bluetoothctl power on && bluetooth-autoconnect` button=1>\
@@ -52,7 +54,7 @@ Config {
 		\%battery%  \
 		\<action=`networkmanager_dmenu`>%wlan0wi%</action>  \
 		\%date%  \
-		\<action=`$HOME/.bin/powermenu.sh`></action>  "
+		\<action=`$HOME/.bin/powermenu.sh`> </action> "
 
    -- plugins
    --   Numbers can be automatically colored according to their value. xmobar
@@ -77,17 +79,17 @@ Config {
                              ] 18000
         -- MTV LOAC1
         -- , Run WeatherX "LOAC1"
-        --      [ ("clear", "")
+        --      [ ("clear", " ")
         --      , ("sunny", "盛")
-        --      , ("mostly clear", "")
-        --      , ("mostly sunny", "")
-        --      , ("partly sunny", "")
+        --      , ("mostly clear", " ")
+        --      , ("mostly sunny", " ")
+        --      , ("partly sunny", " ")
         --      , ("fair", "杖")
-        --      , ("cloudy","")
-        --      , ("overcast","")
+        --      , ("cloudy"," ")
+        --      , ("overcast"," ")
         --      , ("partly cloudy", "⛅")
-        --      , ("mostly cloudy", "")
-        --      , ("considerable cloudiness", "") ]
+        --      , ("mostly cloudy", " ")
+        --      , ("considerable cloudiness", " ") ]
         --      ["-t", "<skyConditionS> <tempC>°C"
         --      , "-L","10", "-H", "25", "--normal", "black"
         --      , "--high", "lightgoldenrod4", "--low", "darkseagreen4"]
@@ -110,7 +112,7 @@ Config {
                              , "--high"     , "red"
                              ] 20
 
-        , Run Memory         [ "--template" ," <used> MB"
+        , Run Memory         [ "--template" ," <used>MB"
                              , "--Low"      , "4000"
 	            		     , "--High"     , "10000"
                              , "--normal"   , "orange"
@@ -119,7 +121,7 @@ Config {
 
         -- battery monitor
 	    , Run Battery [ "-t", "<acstatus> <left>%"
-                      , "-L", "25", "-H", "75", "-p", "3" 
+                      , "-L", "25", "-H", "75"
                       , "--" 
                       , "-L", "25", "-H", "75", "-p", "0x4e937a" 
                       , "-l", "orange"
@@ -149,9 +151,15 @@ Config {
                  , "-h", "墳"
              	 , "-m", "奔"
                  , "-l", "奄"]
+        , Run MPD [ "-t", "<action=`alacritty -t ncmpcpp -e ncmpcpp`><title></action><statei>"
+                  , "--"
+                  , "--host", "127.0.0.1", "--port", "6600"
+                  , "-P", " <action=`mpc --host 127.0.0.1 -p 6600 stop` button=3><action=`mpc --host 127.0.0.1 -p 6600 toggle`> </action></action> "
+                  , "-Z", " <action=`mpc --host 127.0.0.1 -p 6600 stop` button=3><action=`mpc --host 127.0.0.1 -p 6600 toggle`> </action></action> "
+                  , "-S", " <action=`alacritty -t ncmpcpp -e ncmpcpp`> </action> " ] 10
         , Run Com "sh" [ "-c", "$HOME/.bin/bluetooth-xmobar.sh" ] "bluetooth" 10
         , Run CommandReader "$HOME/.bin/bar-updates.sh" "updates"
-        , Run Kbd [("us", "US"), ("cn", "CN")]
+        , Run Kbd [ ("us", "US"), ("cn", "CN") ]
         , Run Com "sh" [ "-c", "$HOME/.bin/firmware-update.sh" ] "firmware" 0
         ]
    }

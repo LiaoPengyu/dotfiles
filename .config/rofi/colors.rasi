@@ -3,7 +3,9 @@
 * {
   al:   #00000000;
   bg:   #FDFFFCFF;
-  bga:  #8080804C;
-  fg:   #212121A6;
+  bga:  #D1D3D2FF;
+  fg:   #212121FF;
   ac:   #80808066;
+  selected-ele: #D88666FF;
+  selected-ele-bg: #FDFFFCFF;
 }

@@ -6,25 +6,21 @@
 ## CONFIGURATION ##############################################################
 
 # Brightness will be lowered to this value.
-min_brightness=20
+min_brightness=5
 
 # If your video driver works with xbacklight, set -time and -steps for fading
 # to $min_brightness here. Setting steps to 1 disables fading.
 fade_time=200
-fade_steps=20
+fade_steps=40
 
 # If you have a driver without RandR backlight property (e.g. radeon), set this
-# to use the sysfs interface and create a .conf file in /etc/tmpfiles.d/
+# to use the sy5fs interface and create a .conf file in /etc/tmpfiles.d/
 # containing the following line to make the sysfs file writable for group
 # "users":
 #
 #     m /sys/class/backlight/acpi_video0/brightness 0664 root users - -
 #
 #sysfs_path=/sys/class/backlight/acpi_video0/brightness
-
-# Time to sleep (in seconds) between increments when using sysfs. If unset or
-# empty, fading is disabled.
-fade_step_time=0.05
 
 ###############################################################################
 
